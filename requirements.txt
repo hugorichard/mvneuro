@@ -1,0 +1,8 @@
+numpy>=1.12
+scikit-learn>=0.23
+fastsrm
+multiviewica
+pytest
+pytest-timeout
+pytest-cov
+coverage
