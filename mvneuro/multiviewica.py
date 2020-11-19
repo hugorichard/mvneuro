@@ -5,7 +5,45 @@ from mvneuro.base import BaseMultiView
 
 class MultiViewICA(BaseMultiView):
     """
-    This solves the MVICA problem
+    Performs MultiViewICA.
+
+    Parameters
+    ----------
+    n_components : int, optional
+        Number of components to extract.
+        If None, no dimension reduction is performed
+    dimension_reduction: str, optional
+        if srm: use srm to reduce the data
+        if pca: use group specific pca to reduce the data
+    noise : float, optional
+        Gaussian noise level
+    max_iter : int, optional
+        Maximum number of iterations to perform
+    init : str or np array of shape (n_groups, n_components, n_components)
+        If permica: initialize with perm ICA, if groupica, initialize with
+        group ica. Else, use the provided array to initialize.
+    random_state : int, RandomState instance or None, optional (default=None)
+        Used to perform a random initialization. If int, random_state is
+        the seed used by the random number generator; If RandomState
+        instance, random_state is the random number generator; If
+        None, the random number generator is the RandomState instance
+        used by np.random.
+    tol : float, optional
+        A positive scalar giving the tolerance at which
+        the un-mixing matrices are considered to have converged.
+    verbose : bool, optional
+        Print information
+
+    Returns
+    -------
+    P : np array of shape (n_groups, n_components, n_features)
+        K is the projection matrix that projects data in reduced space
+    W : np array of shape (n_groups, n_components, n_components)
+        Estimated un-mixing matrices
+    S : np array of shape (n_components, n_samples)
+        Estimated source
+
+
     """
 
     def __init__(
