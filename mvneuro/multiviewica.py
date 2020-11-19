@@ -34,16 +34,10 @@ class MultiViewICA(BaseMultiView):
     verbose : bool, optional
         Print information
 
-    Returns
+    Attributes
     -------
-    P : np array of shape (n_groups, n_components, n_features)
-        K is the projection matrix that projects data in reduced space
-    W : np array of shape (n_groups, n_components, n_components)
+    basis_list : np array of shape (n_groups, n_components, n_components)
         Estimated un-mixing matrices
-    S : np array of shape (n_components, n_samples)
-        Estimated source
-
-
     """
 
     def __init__(

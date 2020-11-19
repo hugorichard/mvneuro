@@ -18,8 +18,8 @@ sys.path.insert(0, os.path.abspath("."))
 
 # -- Project information -----------------------------------------------------
 
-project = "FastSRM"
-copyright = "2019, Hugo RICHARD"
+project = "mvneuro"
+copyright = "2020, Hugo RICHARD"
 author = "Hugo RICHARD"
 
 
