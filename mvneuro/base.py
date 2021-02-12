@@ -18,7 +18,9 @@ class NoPreproc(BaseEstimator, TransformerMixin):
         return np.array([X for _ in subjects_indexes])
 
     def add_subjects(self, X_list, S):
-        self.basis_list = [w for w in self.basis_list] + [np.eye(x.shape[0]) for x in X_list]
+        self.basis_list = [w for w in self.basis_list] + [
+            np.eye(x.shape[0]) for x in X_list
+        ]
 
 
 class BaseMultiView(BaseEstimator, TransformerMixin):
