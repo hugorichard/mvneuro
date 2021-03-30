@@ -51,9 +51,17 @@ class MultiViewICA(BaseMultiView):
         memory=None,
         random_state=0,
         init="permica",
+        temp_dir=None,
+        n_jobs=1,
     ):
         super().__init__(
-            verbose, n_components, reduction, memory, random_state
+            verbose,
+            n_components,
+            reduction,
+            memory,
+            random_state,
+            temp_dir,
+            n_jobs,
         )
         self.noise = noise
         self.tol = tol
