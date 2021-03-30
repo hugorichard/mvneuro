@@ -44,12 +44,16 @@ class BaseMultiView(BaseEstimator, TransformerMixin):
         reduction="srm",
         memory=None,
         random_state=0,
+        temp_dir=None,
+        n_jobs=1,
     ):
         self.verbose = verbose
         self.n_components = n_components
         self.reduction = reduction
         self.memory = memory
         self.random_state = random_state
+        self.temp_dir = temp_dir
+        self.n_jobs = n_jobs
 
     def fit(self, X, y=None):
         """
@@ -72,14 +76,17 @@ class BaseMultiView(BaseEstimator, TransformerMixin):
 
         if self.reduction == "srm":
             self.preproc = IdentifiableFastSRM(
+                n_iter=1,
                 n_iter_reduced=10000,
                 n_components=self.n_components,
                 memory=self.memory,
-                tol=1e-12,
+                tol=1e-7,
                 identifiability="decorr",
                 aggregate=None,
+                n_jobs=self.n_jobs,
                 verbose=self.verbose,
                 random_state=self.random_state,
+                temp_dir=self.temp_dir,
             )
 
         reduced_X = self.preproc.fit_transform(X)
