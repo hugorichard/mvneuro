@@ -66,7 +66,8 @@ class BaseMultiView(BaseEstimator, TransformerMixin):
         Attributes
         basis_list: list
             basis_list[i] is the basis of subject i
-            X[i} = basis_list[i].dot(shared_response)
+            X[i] = basis_list[i].dot(shared_response)
+            Only available if temp_dir is None
         """
         if self.n_components is None:
             self.n_components = X[0].shape[0]
@@ -102,17 +103,18 @@ class BaseMultiView(BaseEstimator, TransformerMixin):
 
         self.y_avg = Y_avg
         self.W_list = W_list
-        self.basis_list = [
-            np.linalg.inv(W_list[i]).T.dot(self.preproc.basis_list[i])
-            for i in range(len(W_list))
-        ]
+        if self.temp_dir is None:
+            self.basis_list = [
+                np.linalg.inv(W_list[i]).T.dot(self.preproc.basis_list[i])
+                for i in range(len(W_list))
+            ]
         return self
 
     def add_subjects(self, X_list, S):
         """
         Add subjects to a fitted model
         """
-        n_basis = len(self.basis_list)
+        n_basis = len(self.W_list)
         self.preproc.add_subjects(X_list, S)
         X_transform = self.preproc.transform(
             X_list, subjects_indexes=np.arange(n_basis, n_basis + len(X_list))
@@ -120,13 +122,14 @@ class BaseMultiView(BaseEstimator, TransformerMixin):
         X_transform = np.array(X_transform)
         W_list = self._add_subjects(X_transform, S)
         self.W_list = [w for w in self.W_list] + [w for w in W_list]
-        basis_list = [
-            np.linalg.inv(W_list[i]).T.dot(
-                self.preproc.basis_list[n_basis + i]
-            )
-            for i in range(len(W_list))
-        ]
-        self.basis_list = self.basis_list + basis_list
+        if self.temp_dir is None:
+            basis_list = [
+                np.linalg.inv(W_list[i]).T.dot(
+                    self.preproc.basis_list[n_basis + i]
+                )
+                for i in range(len(W_list))
+            ]
+            self.basis_list = self.basis_list + basis_list
 
     def transform(self, X, subjects_indexes=None):
         """
