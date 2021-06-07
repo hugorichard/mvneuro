@@ -7,5 +7,5 @@ setup(
     keywords="",
     packages=find_packages(),
     python_requires=">=3",
-    install_requires=['numpy', 'sklearn', 'fastsrm', 'multiviewica']
+    install_requires=['numpy', 'sklearn', 'fastsrm', 'multiviewica', 'qndiag']
 )
