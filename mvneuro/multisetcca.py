@@ -1,4 +1,5 @@
 import numpy as np
+from sklearn.base import BaseEstimator, TransformerMixin
 from qndiag import qndiag
 from sklearn.utils.extmath import randomized_svd
 
@@ -27,6 +28,7 @@ def mcca(
     -------
     W_list : ndarray of shape (m, k, k)
         Unmixing matrices
+    S_sum : ndarray of shape (k, n)
     """
     m, k, n = X_list.shape
     if n_components is None:
@@ -64,7 +66,6 @@ def mcca(
 
     B, _ = qndiag(np.array(Ds))
     W_list = np.array([B.dot(w) for w in W_list])
-    S_sum = np.sum([w.dot(x) for w, x in zip(W_list, X_list)], axis=0)
 
     norm = np.mean(
         [
@@ -75,6 +76,7 @@ def mcca(
     )
     for i in range(m):
         W_list[i] = W_list[i] / norm
+    S_sum = np.sum([w.dot(x) for w, x in zip(W_list, X_list)], axis=0)
     return W_list, S_sum
 
 
@@ -86,3 +88,91 @@ def mcca_add_subject(X, S_sum):
     w = w.T
     w = w / np.std(w.dot(X), axis=1, keepdims=True)
     return w
+
+
+class MCCA(BaseEstimator, TransformerMixin):
+    """
+    Main class for the noise linear rosetta stone problem using ICA
+
+    X_list : list, length = n_pb;
+            each element is an array, shape= (p, n)
+            n_pb : number of problems (or languages)
+            p : number of sources
+            n : number of samples
+    n_iter : number of iterations of the outer loop
+    noise: float
+        Positive float (noise level)
+    """
+
+    def __init__(
+        self,
+        verbose=False,
+        n_components=None,
+        reduction="srm",
+        memory=None,
+        random_state=0,
+        temp_dir=None,
+        n_jobs=1,
+    ):
+        self.verbose = verbose
+        self.n_components = n_components
+        self.reduction = reduction
+        self.memory = memory
+        self.random_state = random_state
+        self.temp_dir = temp_dir
+        self.n_jobs = n_jobs
+
+    def fit(self, X, y=None):
+        """
+        Fits the model
+        Parameters
+        ----------
+        X: list of np arrays of shape (n_voxels, n_samples)
+            Input data: X[i] is the data of subject i
+
+        Attributes
+        basis_list: list
+            basis_list[i] is the basis of subject i
+            X[i] = basis_list[i].dot(shared_response)
+            Only available if temp_dir is None
+        """
+        if self.n_components is None:
+            self.n_components = X[0].shape[0]
+
+        W, S_sum = mcca(np.array(X), self.n_components)
+        self.W_list = W
+        self.S_sum = S_sum
+        return self
+
+    def add_subjects(self, X_list):
+        """
+        Add subjects to a fitted model
+        """
+        W_list = np.array(
+            [w for w in self.W_list]
+            + [mcca_add_subject(X, self.S_sum) for X in X_list]
+        )
+        self.W_list = W_list
+
+    def transform(self, X, subjects_indexes=None):
+        """
+        Fits the model
+        Parameters
+        ----------
+        X: list of np arrays of shape (n_voxels, n_samples)
+        """
+        if subjects_indexes is None:
+            subjects_indexes = np.arange(len(self.W_list))
+
+        return [
+            self.W_list[k].dot(X[i]) for i, k in enumerate(subjects_indexes)
+        ]
+
+    def inverse_transform(self, S, subjects_indexes=None):
+        """
+        Data from shared response
+        """
+        if subjects_indexes is None:
+            subjects_indexes = np.arange(len(self.W_list))
+
+        return [self.W_list[i].dot(S) for i in subjects_indexes]
