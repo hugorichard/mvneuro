@@ -4,9 +4,7 @@ from qndiag import qndiag
 from sklearn.utils.extmath import randomized_svd
 
 
-def mcca(
-    X_list, n_components=None,
-):
+def mcca(X_list, n_components=None, use_jointdiag=True):
     """
 
     Parameters
@@ -58,14 +56,15 @@ def mcca(
     basis_list = [A[i].T.dot(np.linalg.pinv(Us[i])) for i in range(m)]
     basis_list = np.array(basis_list)
 
-    Ds = []
-    for i in range(m):
-        Yi = basis_list[i].dot(X_list[i])
-        Di = Yi.dot(Yi.T)
-        Ds.append(Di)
+    if use_jointdiag:
+        Ds = []
+        for i in range(m):
+            Yi = basis_list[i].dot(X_list[i])
+            Di = Yi.dot(Yi.T)
+            Ds.append(Di)
 
-    B, _ = qndiag(np.array(Ds))
-    basis_list = np.array([B.dot(w) for w in basis_list])
+        B, _ = qndiag(np.array(Ds))
+        basis_list = np.array([B.dot(w) for w in basis_list])
 
     norm = np.mean(
         [
@@ -104,10 +103,9 @@ class MCCA(BaseEstimator, TransformerMixin):
         Positive float (noise level)
     """
 
-    def __init__(
-        self, n_components=None,
-    ):
+    def __init__(self, n_components=None, use_jointdiag=False):
         self.n_components = n_components
+        self.use_jointdiag = use_jointdiag
 
     def fit(self, X, y=None):
         """
@@ -126,7 +124,9 @@ class MCCA(BaseEstimator, TransformerMixin):
         if self.n_components is None:
             self.n_components = min(X[0].shape[0], X[0].shape[1])
 
-        W, S_sum = mcca(np.array(X), self.n_components)
+        W, S_sum = mcca(
+            np.array(X), self.n_components, use_jointdiag=self.use_jointdiag
+        )
         self.basis_list = W
         self.S_sum = S_sum
         return self
