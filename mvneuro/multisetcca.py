@@ -26,7 +26,7 @@ def mcca(
 
     Returns
     -------
-    W_list : ndarray of shape (m, k, k)
+    basis_list : ndarray of shape (m, k, k)
         Unmixing matrices
     S_sum : ndarray of shape (k, n)
     """
@@ -55,29 +55,29 @@ def mcca(
     Xw = np.vstack(Xw)
     U, S, V = randomized_svd(Xw, n_components=n_components)
     A = np.array(np.split(U, m))
-    W_list = [A[i].T.dot(np.linalg.pinv(Us[i])) for i in range(m)]
-    W_list = np.array(W_list)
+    basis_list = [A[i].T.dot(np.linalg.pinv(Us[i])) for i in range(m)]
+    basis_list = np.array(basis_list)
 
     Ds = []
     for i in range(m):
-        Yi = W_list[i].dot(X_list[i])
+        Yi = basis_list[i].dot(X_list[i])
         Di = Yi.dot(Yi.T)
         Ds.append(Di)
 
     B, _ = qndiag(np.array(Ds))
-    W_list = np.array([B.dot(w) for w in W_list])
+    basis_list = np.array([B.dot(w) for w in basis_list])
 
     norm = np.mean(
         [
-            np.std(W_list[i].dot(X_list[i]), axis=1, keepdims=True)
+            np.std(basis_list[i].dot(X_list[i]), axis=1, keepdims=True)
             for i in range(m)
         ],
         axis=0,
     )
     for i in range(m):
-        W_list[i] = W_list[i] / norm
-    S_sum = np.sum([w.dot(x) for w, x in zip(W_list, X_list)], axis=0)
-    return W_list, S_sum
+        basis_list[i] = basis_list[i] / norm
+    S_sum = np.sum([w.dot(x) for w, x in zip(basis_list, X_list)], axis=0)
+    return basis_list, S_sum
 
 
 def mcca_add_subject(X, S_sum):
@@ -92,7 +92,7 @@ def mcca_add_subject(X, S_sum):
 
 class MCCA(BaseEstimator, TransformerMixin):
     """
-    Main class for the noise linear rosetta stone problem using ICA
+    Solving 
 
     X_list : list, length = n_pb;
             each element is an array, shape= (p, n)
@@ -105,22 +105,9 @@ class MCCA(BaseEstimator, TransformerMixin):
     """
 
     def __init__(
-        self,
-        verbose=False,
-        n_components=None,
-        reduction="srm",
-        memory=None,
-        random_state=0,
-        temp_dir=None,
-        n_jobs=1,
+        self, n_components=None,
     ):
-        self.verbose = verbose
         self.n_components = n_components
-        self.reduction = reduction
-        self.memory = memory
-        self.random_state = random_state
-        self.temp_dir = temp_dir
-        self.n_jobs = n_jobs
 
     def fit(self, X, y=None):
         """
@@ -137,22 +124,22 @@ class MCCA(BaseEstimator, TransformerMixin):
             Only available if temp_dir is None
         """
         if self.n_components is None:
-            self.n_components = X[0].shape[0]
+            self.n_components = min(X[0].shape[0], X[0].shape[1])
 
         W, S_sum = mcca(np.array(X), self.n_components)
-        self.W_list = W
+        self.basis_list = W
         self.S_sum = S_sum
         return self
 
-    def add_subjects(self, X_list):
+    def add_subjects(self, X_list, S):
         """
         Add subjects to a fitted model
         """
-        W_list = np.array(
-            [w for w in self.W_list]
+        basis_list = np.array(
+            [w for w in self.basis_list]
             + [mcca_add_subject(X, self.S_sum) for X in X_list]
         )
-        self.W_list = W_list
+        self.basis_list = basis_list
 
     def transform(self, X, subjects_indexes=None):
         """
@@ -162,10 +149,11 @@ class MCCA(BaseEstimator, TransformerMixin):
         X: list of np arrays of shape (n_voxels, n_samples)
         """
         if subjects_indexes is None:
-            subjects_indexes = np.arange(len(self.W_list))
+            subjects_indexes = np.arange(len(self.basis_list))
 
         return [
-            self.W_list[k].dot(X[i]) for i, k in enumerate(subjects_indexes)
+            self.basis_list[k].dot(X[i])
+            for i, k in enumerate(subjects_indexes)
         ]
 
     def inverse_transform(self, S, subjects_indexes=None):
@@ -173,6 +161,6 @@ class MCCA(BaseEstimator, TransformerMixin):
         Data from shared response
         """
         if subjects_indexes is None:
-            subjects_indexes = np.arange(len(self.W_list))
+            subjects_indexes = np.arange(len(self.basis_list))
 
-        return [self.W_list[i].dot(S) for i in subjects_indexes]
+        return [self.basis_list[i].dot(S) for i in subjects_indexes]
