@@ -69,8 +69,6 @@ def mcca(X_list, n_components=None, use_jointdiag=True):
     norm = np.mean(
         [
             np.std(basis_list[i].dot(X_list[i]), axis=1, keepdims=True)
-            * k
-            / n_components
             for i in range(m)
         ],
         axis=0,
@@ -83,12 +81,11 @@ def mcca(X_list, n_components=None, use_jointdiag=True):
 
 def mcca_add_subject(X, S_sum):
     p, n = X.shape
-    k, _ = S_sum.shape
     U, S, V = np.linalg.svd(X, full_matrices=False)
     A = S_sum.dot(V.T).T
     w = np.linalg.pinv(U * S).T.dot(A)
     w = w.T
-    w = w / (np.std(w.dot(X), axis=1, keepdims=True) * p / k)
+    w = w / np.std(w.dot(X), axis=1, keepdims=True)
     return w
 
 
