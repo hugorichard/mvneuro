@@ -5,8 +5,8 @@ import numpy as np
 
 class NoPreproc(BaseEstimator, TransformerMixin):
     def fit(self, X, y=None):
-        self.basis_list = [np.eye(X[0].shape[0]) for _ in range(len(X))]
-        self.basis_list = [np.eye(X[0].shape[0]) for _ in range(len(X))]
+        self.basis_list = [np.eye(X[0].shape[0]).T for _ in range(len(X))]
+        self.basis_list = [np.eye(X[0].shape[0]).T for _ in range(len(X))]
         return self
 
     def transform(self, X, y=None, subjects_indexes=None):
@@ -19,7 +19,7 @@ class NoPreproc(BaseEstimator, TransformerMixin):
 
     def add_subjects(self, X_list, S):
         self.basis_list = [w for w in self.basis_list] + [
-            np.eye(x.shape[0]) for x in X_list
+            np.eye(x.shape[0]).T for x in X_list
         ]
 
 
@@ -102,7 +102,7 @@ class BaseMultiView(BaseEstimator, TransformerMixin):
         self.W_list = W_list
         if self.temp_dir is None:
             self.basis_list = [
-                np.linalg.inv(W_list[i]).T.dot(self.preproc.basis_list[i])
+                np.linalg.inv(W_list[i]).T.dot(self.preproc.basis_list[i].T)
                 for i in range(len(W_list))
             ]
         return self
@@ -122,7 +122,7 @@ class BaseMultiView(BaseEstimator, TransformerMixin):
         if self.temp_dir is None:
             basis_list = [
                 np.linalg.inv(W_list[i]).T.dot(
-                    self.preproc.basis_list[n_basis + i]
+                    self.preproc.basis_list[n_basis + i].T
                 )
                 for i in range(len(W_list))
             ]
