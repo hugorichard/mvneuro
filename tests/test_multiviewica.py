@@ -114,6 +114,7 @@ def test_inverse_transform(reduction, n_voxels):
         n_voxels, n_components, n_timeframes, n_components, n_subjects, None
     )
     X = [np.concatenate(np.array(x), axis=1) for x in Xs]
+    X = [x + 1e-15 * np.eye(*x.shape) for x in X]
 
     ica = MultiViewICA(reduction=reduction, n_components=n_components, n_iter=100)
     shared = ica.fit_transform(X)
