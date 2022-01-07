@@ -77,12 +77,9 @@ class BaseMultiView(BaseEstimator, TransformerMixin):
 
         if self.reduction == "srm":
             self.preproc = IdentifiableFastSRM(
-                n_iter=1,
-                n_iter_reduced=10000,
+                n_iter=10000,
                 n_components=self.n_components,
-                memory=self.memory,
                 tol=1e-7,
-                identifiability="decorr",
                 aggregate=None,
                 n_jobs=self.n_jobs,
                 verbose=self.verbose,
